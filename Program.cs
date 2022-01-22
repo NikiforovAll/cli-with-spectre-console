@@ -21,5 +21,4 @@ app.Configure(c =>
         .WithExample(new[] {"download", "--random"});
 });
 
-app.Run(args);
-
+await app.RunAsync(args);

@@ -21,6 +21,8 @@ public class ListBots : Command<ListBotsSettings>
     public override int Execute(
         CommandContext context, ListBotsSettings settings)
     {
+        AnsiConsole.Write(new FigletText(".NET Bots").Centered().Color(Color.Purple));
+
         var dataset = new DataSet {DataSetName = "Bot Gallery",};
         var connection = this.db.Database.GetDbConnection();
 

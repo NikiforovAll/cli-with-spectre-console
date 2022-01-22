@@ -19,7 +19,7 @@ public class DownloadBotSettings : CommandSettings
     public bool IsRandom { get; set; }
 }
 
-public class DownloadBot : Command<DownloadBotSettings>
+public class DownloadBot : AsyncCommand<DownloadBotSettings>
 {
     private readonly HttpClient httpClient;
     private readonly RobotContext db;
@@ -30,7 +30,7 @@ public class DownloadBot : Command<DownloadBotSettings>
         this.db = db;
     }
 
-    public override int Execute(
+    public override async Task<int> ExecuteAsync(
         CommandContext context, DownloadBotSettings settings)
     {
         if (settings.IsRandom)
@@ -40,13 +40,22 @@ public class DownloadBot : Command<DownloadBotSettings>
             settings.Name = this.db
                 .Robots.Skip(toSkip).Take(1).First().Name;
         }
+        else if (string.IsNullOrWhiteSpace(settings.Name))
+        {
+            settings.Name = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("What's your [green]favorite fruit[/]?")
+                    .PageSize(5)
+                    .AddChoices(this.db.Robots.Select(r => r.Name)));
+        }
+
 
         var robot = this.db
             .Robots.First(r => r.Name == settings.Name);
 
         var fileName = string.Empty;
 
-        AnsiConsole.Progress()
+        await AnsiConsole.Progress()
             .Columns(new ProgressColumn[]
             {
                 new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
@@ -54,23 +63,20 @@ public class DownloadBot : Command<DownloadBotSettings>
             }).StartAsync(
                 this.httpClient,
                 new HttpRequestMessage(HttpMethod.Get, robot.Uri),
-                "Downloading a bot", stream =>
+                "Downloading a bot", async stream =>
                 {
                     fileName = Path.GetTempPath() + Guid.NewGuid().ToString() + ".png";
-                    using (var fileStream = File.Create(fileName))
-                    {
-                        stream.Seek(0, SeekOrigin.Begin);
-                        stream.CopyTo(fileStream);
-                    }
+                    await using var fileStream = File.Create(fileName);
+                    stream.Seek(0, SeekOrigin.Begin);
+                    await stream.CopyToAsync(fileStream);
+                });
 
-                    return Task.CompletedTask;
-                }).Wait();
-
-        AnsiConsole.WriteLine(fileName);
+        var rule = new Rule($"[red]{robot.Name}[/]") {Style = Style.Parse("red dim")};
+        AnsiConsole.Write(rule);
         // TODO: use stream/span based API instead of file caching
         var image = new CanvasImage(fileName).MaxWidth(16);
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Panel(image));
+        AnsiConsole.Write(new Panel(image).BorderColor(Color.Maroon));
 
         return 0;
     }
