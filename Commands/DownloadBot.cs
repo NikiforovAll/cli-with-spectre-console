@@ -33,6 +33,40 @@ public class DownloadBot : AsyncCommand<DownloadBotSettings>
     public override async Task<int> ExecuteAsync(
         CommandContext context, DownloadBotSettings settings)
     {
+        this.EnsureBotSettings(settings);
+
+        var robot = this.db
+            .Robots.First(r => r.Name == settings.Name);
+
+        var fileName = string.Empty;
+
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, robot.Uri);
+        await AnsiConsole.Progress()
+            .Columns(new ProgressColumn[]
+            {
+                new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
+                new RemainingTimeColumn(), new SpinnerColumn(),
+            }).StartAsync(this.httpClient, httpRequestMessage, "Downloading a bot", SaveImageToRandomFile);
+
+        var rule = new Rule($"[red]{robot.Name}[/]") {Style = Style.Parse("red dim")};
+        AnsiConsole.Write(rule);
+        var image = new CanvasImage(fileName).MaxWidth(16);
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Panel(image).BorderColor(Color.Maroon));
+
+        return 0;
+
+        async Task SaveImageToRandomFile(Stream stream)
+        {
+            fileName = Path.GetTempPath() + Guid.NewGuid().ToString() + ".png";
+            await using var fileStream = File.Create(fileName);
+            stream.Seek(0, SeekOrigin.Begin);
+            await stream.CopyToAsync(fileStream);
+        }
+    }
+
+    private void EnsureBotSettings(DownloadBotSettings settings)
+    {
         if (settings.IsRandom)
         {
             var toSkip = Random
@@ -48,36 +82,5 @@ public class DownloadBot : AsyncCommand<DownloadBotSettings>
                     .PageSize(5)
                     .AddChoices(this.db.Robots.Select(r => r.Name)));
         }
-
-
-        var robot = this.db
-            .Robots.First(r => r.Name == settings.Name);
-
-        var fileName = string.Empty;
-
-        await AnsiConsole.Progress()
-            .Columns(new ProgressColumn[]
-            {
-                new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(),
-                new RemainingTimeColumn(), new SpinnerColumn(),
-            }).StartAsync(
-                this.httpClient,
-                new HttpRequestMessage(HttpMethod.Get, robot.Uri),
-                "Downloading a bot", async stream =>
-                {
-                    fileName = Path.GetTempPath() + Guid.NewGuid().ToString() + ".png";
-                    await using var fileStream = File.Create(fileName);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    await stream.CopyToAsync(fileStream);
-                });
-
-        var rule = new Rule($"[red]{robot.Name}[/]") {Style = Style.Parse("red dim")};
-        AnsiConsole.Write(rule);
-        // TODO: use stream/span based API instead of file caching
-        var image = new CanvasImage(fileName).MaxWidth(16);
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Panel(image).BorderColor(Color.Maroon));
-
-        return 0;
     }
 }

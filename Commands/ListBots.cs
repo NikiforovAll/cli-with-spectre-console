@@ -18,8 +18,7 @@ public class ListBots : Command<ListBotsSettings>
 
     public ListBots(RobotContext db) => this.db = db;
 
-    public override int Execute(
-        CommandContext context, ListBotsSettings settings)
+    public override int Execute(CommandContext context, ListBotsSettings settings)
     {
         AnsiConsole.Write(new FigletText(".NET Bots").Centered().Color(Color.Purple));
 
@@ -29,11 +28,11 @@ public class ListBots : Command<ListBotsSettings>
         dataset.Tables.Add(RetrieveDataTable(connection, this.db.Robots));
         var dataSetToDisplay = dataset.FromDataSet(opt => opt.BorderColor(Color.Aqua));
         AnsiConsole.Write(dataSetToDisplay);
+
         return 0;
     }
 
-    private static DataTable RetrieveDataTable(
-        DbConnection connection, IQueryable query)
+    private static DataTable RetrieveDataTable(DbConnection connection, IQueryable query)
     {
         connection.Open();
         using var cmd = connection.CreateCommand();
@@ -41,8 +40,9 @@ public class ListBots : Command<ListBotsSettings>
         cmd.CommandType = CommandType.Text;
         cmd.CommandText = query.ToQueryString();
         using var reader = cmd.ExecuteReader();
-        var dt = new DataTable();
-        dt.Load(reader);
-        return dt;
+        var table = new DataTable();
+        table.Load(reader);
+
+        return table;
     }
 }

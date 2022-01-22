@@ -1,5 +1,4 @@
-﻿using Spectre.Console;
-#pragma warning disable CS8765
+﻿#pragma warning disable CS8765
 
 namespace CliWithSpectreConsole.Commands;
 

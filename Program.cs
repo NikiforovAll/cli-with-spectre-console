@@ -15,22 +15,9 @@ app.Configure(c =>
         .WithExample(new[] {"download", "--random"});
 });
 
-await app.RunAsync(args);
-
-
-var app2 = new CommandApp();
-
-app2.Configure(c =>
+if (args.Length == 0)
 {
-    c.AddBranch("bots", bots =>
-    {
-        bots.AddCommand<ListBots>("list");
-        bots.AddBranch("download", create =>
-        {
-            create.AddCommand<ExportBots>("table")
-                .WithExample(new[] {"bots", "download", "table"});
-            create.AddCommand<DownloadBot>("bot")
-                .WithExample(new[] {"bots", "download", "bot"});
-        });
-    });
-});
+    AnsiConsole.Write(new FigletText(".NET Bots CLI").Centered().Color(Color.Purple));
+}
+
+await app.RunAsync(args);
