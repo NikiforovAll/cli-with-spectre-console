@@ -1,10 +1,4 @@
-﻿using CliWithSpectreConsole.Commands;
-using CliWithSpectreConsole.Data;
-using CliWithSpectreConsole.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-
-var services = new ServiceCollection();
+﻿var services = new ServiceCollection();
 
 services.AddHttpClient();
 services.AddDbContext<RobotContext>(opt =>
@@ -22,3 +16,21 @@ app.Configure(c =>
 });
 
 await app.RunAsync(args);
+
+
+var app2 = new CommandApp();
+
+app2.Configure(c =>
+{
+    c.AddBranch("bots", bots =>
+    {
+        bots.AddCommand<ListBots>("list");
+        bots.AddBranch("download", create =>
+        {
+            create.AddCommand<ExportBots>("table")
+                .WithExample(new[] {"bots", "download", "table"});
+            create.AddCommand<DownloadBot>("bot")
+                .WithExample(new[] {"bots", "download", "bot"});
+        });
+    });
+});

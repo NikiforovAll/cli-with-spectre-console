@@ -1,4 +1,5 @@
-﻿#pragma warning disable CS8765
+﻿using Spectre.Console;
+#pragma warning disable CS8765
 
 namespace CliWithSpectreConsole.Commands;
 
@@ -38,12 +39,12 @@ public class ExportBots : Command<ExportBotsSettings>
             return -1;
         }
 
-        Console.WriteLine();
+        AnsiConsole.WriteLine();
         AnsiConsole.Markup(
             "[default on grey] exported robots [/]");
         AnsiConsole.Markup(
             $"[white on green] {robots.Count} [/]");
-        Console.WriteLine();
+        AnsiConsole.WriteLine();
 
         return 0;
     }
